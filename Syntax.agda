@@ -3,6 +3,7 @@
 import Agda.Builtin.Equality.Rewrite
 
 open import Data.Unit using (⊤; tt)
+open import Data.Empty using (⊥)
 open import Data.Product using (∃; _×_; proj₁; proj₂)
   renaming (_,_ to _Σ,_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong₂)
@@ -10,18 +11,11 @@ open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 module Syntax where
 
--- TODO: Think about fixities
 infixr 5 _⇒_
--- infix   3  _⊢[_]_
--- infix   3  _⊨[_]_
 infixl  4  _,_
--- infix   5  _∘_
 infix   5  ƛ_
 infixl  6  _·_
 infix   7  `_
--- infix   8  _^_
--- infix   8  _⁺_
--- infix   8  _[_]
 
 data Sort : Set where
   V   : Sort
@@ -288,11 +282,11 @@ module Choice12 where
   PreVal : Ctx → Ty → Set
   
   Val Γ A = PreVal Γ A ⊎ Ne Γ A
-  PreVal Γ o       = ⊤
+  PreVal Γ o       = ⊥
   -- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
   -- a sequence of additional variables which can be thrown onto the front
   -- of the context
-  -- The original post avoids this complexity by using named variables
+  -- The original lisp code avoids this complexity by using named variables
   PreVal Γ (A ⇒ B) = ∀ Δ → Val (Γ ++ Δ) A → Val (Γ ++ Δ) B
 
   pattern neu t = inj₂ t
@@ -305,7 +299,6 @@ module Choice12 where
   wk*-val  : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
   wk*-env  : ∀ Θ → Env Δ Γ → Env (Δ ++ Θ) Γ
 
-  wk*-val {A = o}     Δ (val tt) = val tt
   wk*-val {A = A ⇒ B} Δ (val t)  = val λ Θ u → t (Δ ++ Θ) u
   wk*-val             Δ (neu t)  = neu (wk*-ne Δ t)
 
@@ -321,7 +314,7 @@ module Choice12 where
   eval ρ (` i)        = eval ρ i
   eval ρ (t · u)      = app-val (eval ρ t) (eval ρ u)
   eval ρ (ƛ t)        = val (λ Δ u → eval (wk*-env Δ ρ , u) t)
-  eval ρ tt           = val tt
+  eval ρ tt           = neu tt
 
   app-val (val t) u = t ε u
   app-val (neu i) u = neu (i · reify u)
@@ -339,11 +332,7 @@ module Choice11 where
   data NeVal : Ctx → Ty → Set
   
   Val Γ A = PreVal Γ A ⊎ NeVal Γ A
-  PreVal Γ o       = ⊤
-  -- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
-  -- a sequence of additional variables which can be thrown onto the front
-  -- of the context
-  -- The original post avoids this complexity by using named variables
+  PreVal Γ o       = ⊥
   PreVal Γ (A ⇒ B) = ∀ Δ → Val (Γ ++ Δ) A → Val (Γ ++ Δ) B
 
   {-# NO_POSITIVITY_CHECK #-}
@@ -363,7 +352,6 @@ module Choice11 where
   wk*-neval : ∀ Δ → NeVal Γ A → NeVal (Γ ++ Δ) A
   wk*-env   : ∀ Θ → Env Δ Γ → Env (Δ ++ Θ) Γ
 
-  wk*-val {A = o}     Δ (val tt) = val tt
   wk*-val {A = A ⇒ B} Δ (val t)  = val λ Θ u → t (Δ ++ Θ) u
   wk*-val             Δ (neu t)  = neu (wk*-neval Δ t)
 
@@ -375,17 +363,16 @@ module Choice11 where
   wk*-env Θ (ρ , t) = wk*-env Θ ρ , wk*-val Θ t
 
   app-val : Val Γ (A ⇒ B) → Val Γ A → Val Γ B
-  eval  : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
+  app-val (val t) u = t ε u
+  app-val (neu i) u = neu (i · u)
 
+  eval  : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
   eval (ρ , t) vz     = t
   eval (ρ , t) (vs i) = eval ρ i
   eval ρ (` i)        = eval ρ i
   eval ρ (t · u)      = app-val (eval ρ t) (eval ρ u)
   eval ρ (ƛ t)        = val (λ Δ u → eval (wk*-env Δ ρ , u) t)
-  eval ρ tt           = val tt
-
-  app-val (val t) u = t ε u
-  app-val (neu i) u = neu (i · u)
+  eval ρ tt           = neu tt
 
   reify    : Val Γ A → Nf Γ A
   reify-ne : NeVal Γ A → Ne Γ A
@@ -401,11 +388,8 @@ module Choice11 where
 
 module Choice2 where
   Val : Ctx → Ty → Set
-  Val Γ o       = ⊤ ⊎ Ne Γ o      
+  Val Γ o       = Ne Γ o      
   Val Γ (A ⇒ B) = ∀ Δ → Val (Γ ++ Δ) A → Val (Γ ++ Δ) B
-
-  pattern neu t  = inj₂ t
-  pattern tt-val = inj₁ tt
 
   data Env (Δ : Ctx) : Ctx → Set where
     ε   : Env Δ ε
@@ -414,9 +398,8 @@ module Choice2 where
   wk*-val  : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
   wk*-env  : ∀ Θ → Env Δ Γ → Env (Δ ++ Θ) Γ
 
-  wk*-val {A = o}     Δ tt-val  = tt-val
-  wk*-val {A = o}     Δ (neu t) = neu (wk*-ne Δ t)
-  wk*-val {A = A ⇒ B} Δ t Θ u   = t (Δ ++ Θ) u
+  wk*-val {A = o}     Δ t     = wk*-ne Δ t
+  wk*-val {A = A ⇒ B} Δ t Θ u = t (Δ ++ Θ) u
 
   wk*-env Θ ε       = ε
   wk*-env Θ (ρ , t) = wk*-env Θ ρ , wk*-val Θ t
@@ -427,14 +410,84 @@ module Choice2 where
   eval ρ (` i)        = eval ρ i
   eval ρ (t · u)      = (eval ρ t) ε (eval ρ u)
   eval ρ (ƛ t)        = λ Δ u → eval (wk*-env Δ ρ , u) t
-  eval ρ tt           = tt-val
+  eval ρ tt           = tt
 
   reify   : Val Γ A → Nf Γ A
   reflect : Ne Γ A → Val Γ A
 
-  reify {A = o} tt-val  = ne tt
-  reify {A = o} (neu t) = ne t
-  reify {A = A ⇒ B} t   = ƛ (reify (t (ε , A) (reflect (` vz))))
+  reify {A = o}     t = ne t
+  reify {A = A ⇒ B} t = ƛ (reify (t (ε , A) (reflect (` vz))))
 
-  reflect {A = o}     t     = neu t
+  reflect {A = o}     t     = t
   reflect {A = A ⇒ B} t Δ u = reflect (wk*-ne Δ t · reify u)
+
+
+module Choice3 where
+  Val : Ctx → Ty → Set
+  PreVal : Ctx → Ty → Set
+  record Closure (Γ : Ctx) (A : Ty) (B : Ty) : Set
+  data Env (Δ : Ctx) : Ctx → Set
+
+  Val Γ A = PreVal Γ A ⊎ Ne Γ A
+  PreVal Γ o       = ⊥
+  PreVal Γ (A ⇒ B) = Closure Γ A B
+
+  record Closure Γ A B where
+    inductive
+    constructor _,_
+    field
+      {ctx} : Ctx
+      env   : Env Γ ctx
+      body  : Tm (ctx , A) B
+    
+  data Env Δ where
+    ε   : Env Δ ε
+    _,_ : Env Δ Γ → Val Δ A → Env Δ (Γ , A)
+
+  pattern neu t = inj₂ t
+  pattern clo t = inj₁ t
+
+  wk*-val  : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
+  wk*-env  : ∀ Θ → Env Δ Γ → Env (Δ ++ Θ) Γ
+
+  wk*-val {A = A ⇒ B} Δ (clo (ρ , t)) = clo (wk*-env Δ ρ , t)
+  wk*-val             Δ (neu t)       = neu (wk*-ne Δ t)
+
+  wk*-env Θ ε       = ε
+  wk*-env Θ (ρ , t) = wk*-env Θ ρ , wk*-val Θ t
+
+  -- I don't know how to make 'Choice3' work without asserting termination.
+  -- It sort-of makes sense why this approach isn't structurally recursive: the
+  -- LHS of an application could 'eval' to a 'Clo'sure, but applying a 'Clo'sure
+  -- requires an additional 'eval' on the body. We have no guarantee that the 
+  -- term inside a 'Clo'sure produced by 'eval' is any smaller than the 
+  -- original 'eval'-ed term (e.g. consider variables, where 'eval' looks up a 
+  -- 'Val'ue in the 'Env'ironment).
+
+  -- If we had structurally recursive substitutions (on 'Val's specifically), 
+  -- another approach could be to store the body of 'Clo'sures as a 'Val'
+  -- instead of a 'Tm' (conceptually neater anyway IMO) and then 'app-val'
+  -- would apply the substitution 'ρ , t' to the closure body. Of course, 'Val's
+  -- contain 'Ne'utrals, so attempting to implement recursive substitutions
+  -- naively will hit a variation on the same problem (LHS 'Ne'utral could 
+  -- become unblocked after a substitution)
+
+  {-# TERMINATING #-}
+  eval    : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
+  app-val : Val Γ (A ⇒ B) → Val Γ A → Val Γ B
+  reify   : Val Γ A → Nf Γ A
+
+  eval (ρ , t) vz     = t
+  eval (ρ , t) (vs i) = eval ρ i
+  eval ρ (` i)        = eval ρ i
+  eval ρ (t · u)      = app-val (eval ρ t) (eval ρ u)
+  eval ρ (ƛ t)        = clo (ρ , t) 
+  eval ρ tt           = neu tt
+
+  -- app-val (clo (ρ , t)) u = eval (ρ , u) t
+  app-val (clo (ρ , t)) u = eval (ρ , u) t
+  app-val (neu t)       u = neu (t · reify u)
+
+  reify {A = A ⇒ B} (clo (ρ , t)) 
+    = ƛ reify (eval (wk*-env (ε , A) ρ , (neu (` vz))) t)
+  reify             (neu t)       = ne t
