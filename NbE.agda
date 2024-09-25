@@ -153,7 +153,8 @@ module Examples1-PHOAS where
 -- As a last step before we get on to normalisation, we need to derive 
 -- substitutions. Technically, we only *really* need weakening, but we might as
 -- well define substitutions in their full generality!
--- Thorsten Altenkirch originally came up with the trick that lets us do this.
+-- Thorsten Altenkirch originally came up with the trick that lets us do this
+-- without copy and paste.
 module Substitution where
   data Tms[_] (q : Sort) : Ctx → Ctx → Set where
     ε   : Tms[ q ] Δ ε
@@ -195,10 +196,13 @@ module Substitution where
   (ƛ t)   [ δ ]     = ƛ (t [ δ ^ _ ])
   tt      [ δ ]     = tt
 
-  wk* : ∀ Δ → Vars (Γ ++ Δ) Γ
-  wk* ε       = id
-  wk* (Δ , A) = wk* Δ ⁺
+  wk*[_] : ∀ q Δ → Tms[ q ] (Γ ++ Δ) Γ
+  wk*[ q ] ε       = id[ q ]
+  wk*[ q ] (Δ , A) = wk*[ q ] Δ ⁺
 
+  wk* : ∀ Δ → Vars (Γ ++ Δ) Γ
+  wk* = wk*[ V ]
+  
   _[_]ne : Ne Γ A → Vars Δ Γ → Ne Δ A
   _[_]nf : Nf Γ A → Vars Δ Γ → Nf Δ A
 
@@ -240,7 +244,7 @@ module Attempt1 where
     test : church-two {A = A} ≡ λ s z → s (s z)
     test = refl
 
-  -- Doesn't work!
+  -- Doesn't work! Var'iables are not 'Val'ues
   reify-1 : Val A → Nf Γ A
   reify-1 {A = o}     tt = ne tt
   reify-1 {A = A ⇒ B} t  = ƛ (reify-1 (t {!vz!}))
@@ -271,7 +275,7 @@ module Choice1-Attempt1 where
   eval ρ (ƛ t)        = val λ u → eval (ρ , u) t
   eval ρ tt           = val tt
 
-  -- Stuck again!
+  -- Stuck again! 'Ne'utrals are *also* not 'Val'ues
   app-val (val t) u = t u
   app-val (var i) u = {!!}
 
@@ -284,7 +288,7 @@ module Choice12 where
   Val Γ A = PreVal Γ A ⊎ Ne Γ A
   PreVal Γ o       = ⊥
   -- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
-  -- a sequence of additional variables which can be thrown onto the front
+  -- a sequence of additional 'Var'iables which can be thrown onto the front
   -- of the context
   -- The original lisp code avoids this complexity by using named variables
   PreVal Γ (A ⇒ B) = ∀ Δ → Val (Γ ++ Δ) A → Val (Γ ++ Δ) B
@@ -484,7 +488,6 @@ module Choice3 where
   eval ρ (ƛ t)        = clo (ρ , t) 
   eval ρ tt           = neu tt
 
-  -- app-val (clo (ρ , t)) u = eval (ρ , u) t
   app-val (clo (ρ , t)) u = eval (ρ , u) t
   app-val (neu t)       u = neu (t · reify u)
 
