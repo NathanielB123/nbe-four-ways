@@ -9,7 +9,7 @@ open import Data.Product using (∃; _×_; proj₁; proj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
-module Syntax where
+module NbE where
 
 infixr 5 _⇒_
 infixl  4  _,_
