@@ -75,16 +75,16 @@ data Nf where
 
 Val : Ty → Set
 Val ⊤'      = ⊤
-Val (A ⇒ B) = (Val A → Val B)
+Val (A ⇒ B) = Val A → Val B
 
 data Env : Ctx → Set where
   ε   : Env ε
   _,_ : Env Γ → Val A → Env (Γ , A)
 
 eval : Env Γ → Tm[ q ] Γ A → Val A
+eval ρ (` i)        = eval ρ i
 eval (ρ , t) vz     = t
 eval (ρ , t) (vs i) = eval ρ i
-eval ρ (` i)        = eval ρ i
 eval ρ (t · u)      = (eval ρ t) (eval ρ u)
 eval ρ (ƛ t) u      = eval (ρ , u) t
 eval ρ tt           = tt

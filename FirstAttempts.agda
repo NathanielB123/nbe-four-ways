@@ -26,9 +26,9 @@ module Attempt1 where
   ℕ-recurse z s (su n) = s (ℕ-recurse z s n)
 
   eval : Env Γ → Tm[ q ] Γ A → Val A
+  eval ρ (` i)         = eval ρ i
   eval (ρ , t) vz      = t
   eval (ρ , t) (vs i)  = eval ρ i
-  eval ρ (` i)         = eval ρ i
   eval ρ (t · u)       = (eval ρ t) (eval ρ u)
   eval ρ (ƛ t) u       = eval (ρ , u) t
   eval ρ tt            = tt
@@ -83,9 +83,9 @@ module Attempt2 where
   ℕ-rec-val : Val Γ A → Val Γ (A ⇒ A) → Val Γ ℕ' → Val Γ A
 
   eval : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
+  eval ρ (` i)         = eval ρ i
   eval (ρ , t) vz      = t
   eval (ρ , t) (vs i)  = eval ρ i
-  eval ρ (` i)         = eval ρ i
   eval ρ (t · u)       = app-val (eval ρ t) (eval ρ u)
   eval ρ (ƛ t)         = val λ u → eval (ρ , u) t
   eval ρ tt            = val tt
@@ -100,7 +100,7 @@ module Attempt2 where
   app-val (var i) u = {!!}
 
   -- We also get stuck implementing the 'ℕ' constructor/recursor on 'Val's. 
-  -- We need 'Val'ue 'su' to accept neutrals
+  -- We need 'Val'ue 'su' to accept neutrals.
   suc-val (val n) = val (su n)
   suc-val (var i) = {!!}
 

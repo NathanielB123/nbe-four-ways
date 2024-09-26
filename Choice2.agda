@@ -38,9 +38,9 @@ open import Env Val wk*-val (reflect (` vz))
 eval : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
 ℕ-rec-val : Val Γ A → (Val Γ (A ⇒ A)) → Val Γ ℕ' → Val Γ A
 
+eval ρ (` i)         = eval ρ i
 eval (ρ , t) vz      = t
 eval (ρ , t) (vs i)  = eval ρ i
-eval ρ (` i)         = eval ρ i
 eval ρ (t · u)       = (eval ρ t) ε (eval ρ u)
 eval ρ (ƛ t)         = λ Δ u → eval (wk*-env Δ ρ , u) t
 eval ρ tt            = tt
@@ -71,18 +71,22 @@ module Example-Norm where
   open import Examples
   open Example-ChurchNats
 
-  test-Ctwo-ℕ : norm (Ctwo {Γ = ε} {A = ℕ'}) 
+  -- Now 'reify' and 'reflect' always block on the type, we have to instantiate
+  -- with a concrete type (e.g. 'ℕ') to normalise a term
+  test-Ctwo-ℕ : norm (Ctwo {Γ = Γ} {A = ℕ'}) 
               ≡ ƛ (ƛ ne (` vs vz · ne (` vs vz · ne (` vz))))
   test-Ctwo-ℕ = refl
 
-  test-Ctwo-⊤ : norm (Ctwo {Γ = ε} {A = ⊤'}) 
+  -- On the upside, blocking on the type means we can implement type-directed
+  -- reductions - in other words, we can respect eta-equalities!
+  test-Ctwo-⊤ : norm (Ctwo {Γ = Γ} {A = ⊤'}) 
               ≡ ƛ ƛ tt
   test-Ctwo-⊤ = refl
 
   open Example-Apply
   
-  test-apply : norm (apply {Γ = ε} {A = ℕ' ⇒ ℕ'} {B = ℕ' ⇒ ℕ'})
+  test-apply : norm (apply {Γ = Γ} {A = ℕ' ⇒ ℕ'} {B = ℕ' ⇒ ℕ'})
              ≡ ƛ ƛ ƛ ne (` vs (vs vz) · (ƛ ne (` vs (vs vz) 
                                       · ne (` vz))) · ne (` vz))
   test-apply = refl
-  
+   
