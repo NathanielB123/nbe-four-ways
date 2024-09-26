@@ -118,7 +118,7 @@ module Example where
   foo-norm2 = refl
 
 -- As mentioned at the start, this isn't as interesting a result as it might
--- initially look. Here's a normaliser that doesn't even use the 'Tm' it is 
+-- initially seem. Here's a normaliser that doesn't even use the 'Tm' it is 
 -- given!
 trivial-norm : Tm Γ A → Nf Γ A
 trivial-norm _ = build-nf _

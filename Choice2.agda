@@ -85,8 +85,12 @@ module Example-Norm where
 
   open Example-Apply
   
-  test-apply : norm (apply {Γ = Γ} {A = ℕ' ⇒ ℕ'} {B = ℕ' ⇒ ℕ'})
-             ≡ ƛ ƛ ƛ ne (` vs (vs vz) · (ƛ ne (` vs (vs vz) 
-                                      · ne (` vz))) · ne (` vz))
-  test-apply = refl
+  test-apply1 : norm (apply {Γ = Γ} {A = ℕ'} {B = ℕ'})
+              ≡ ƛ (ƛ ne (` vs vz · ne (` vz)))
+  test-apply1 = refl
+
+  test-apply2 : norm (apply {Γ = Γ} {A = ℕ' ⇒ ℕ'} {B = ℕ' ⇒ ℕ'})
+              ≡ ƛ ƛ ƛ ne (` vs (vs vz) · (ƛ ne (` vs (vs vz) 
+                                       · ne (` vz))) · ne (` vz))
+  test-apply2 = refl
    
