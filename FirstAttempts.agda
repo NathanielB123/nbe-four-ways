@@ -22,8 +22,8 @@ module Attempt1 where
     _,_ : Env Γ → Val A → Env (Γ , A)
 
   ℕ-recurse : ∀ {A : Set} → A → (A → A) → ℕ → A
-  ℕ-recurse z s zero    = z
-  ℕ-recurse z s (suc n) = s (ℕ-recurse z s n)
+  ℕ-recurse z s ze     = z
+  ℕ-recurse z s (su n) = s (ℕ-recurse z s n)
 
   eval : Env Γ → Tm[ q ] Γ A → Val A
   eval (ρ , t) vz      = t
@@ -32,8 +32,8 @@ module Attempt1 where
   eval ρ (t · u)       = (eval ρ t) (eval ρ u)
   eval ρ (ƛ t) u       = eval (ρ , u) t
   eval ρ tt            = tt
-  eval ρ ze            = zero
-  eval ρ (su n)        = suc (eval ρ n)
+  eval ρ ze            = ze
+  eval ρ (su n)        = su (eval ρ n)
   eval ρ (ℕ-rec z s n) = ℕ-recurse (eval ρ z) (eval ρ s) (eval ρ n)
 
   module Example-ChurchNatEval where
@@ -45,21 +45,30 @@ module Attempt1 where
     test : church-two {A = A} ≡ λ s z → s (s z)
     test = refl
 
-  -- Doesn't work! Var'iables are not 'Val'ues
-  -- Though... if we stuck with just '⊤' and '_⇒_' type formers, I think we
-  -- could actually implement a 'reflect : Ne Γ A → Val Γ A'. I'll give this
-  -- a try in a bit...
-  reify : Val A → Nf Γ A
-  reify {A = ⊤'}    tt     = tt
-  reify {A = ℕ'}    zero   = ze
-  reify {A = ℕ'}   (suc n) = su (reify n)
-  reify {A = A ⇒ B} t      = ƛ reify (t {!vz!})
+  reify   : Val A → Nf Γ A
+  reflect : Ne Γ A → Val A 
 
+  reify {A = ⊤'}    tt     = tt
+  reify {A = ℕ'}    ze     = ze
+  reify {A = ℕ'}    (su n) = su (reify n)
+  -- The original post gives up here, but we'll try and go a bit further and
+  -- try to implement a way to convert 'Ne'utrals (like '` vz') to 'Val'ues.
+  reify {A = A ⇒ B} t      = ƛ reify (t (reflect (` vz {Γ = ε})))
+
+  reflect {A = ⊤'}    t   = tt
+  reflect {A = A ⇒ B} t u = reflect (t · reify u)
+  -- Unfortunately, we still get stuck. The η-rule for 'ℕ' isn't structurally
+  -- recursive on 'Ty'pes like '⊤' and '_⇒_'.
+  -- However, if we stick to an object theory without any inductive types, then 
+  -- we actually can make this sort-of work - see 'ExtremeEta'
+  reflect {A = ℕ'}    t   = reflect (ℕ-rec ze (ƛ su (ne (` vz))) t)
 
 module Attempt2 where
   Val    : Ctx → Ty → Set
   PreVal : Ctx → Ty → Set
   
+  -- In the second attempt, we try to only add 'Var'iables to 'Val'ues (i.e. not
+  -- full-blown 'Ne'utrals)
   Val Γ A = PreVal Γ A ⊎ Var Γ A
   PreVal Γ ⊤'      = ⊤
   PreVal Γ ℕ'      = ℕ
@@ -83,19 +92,21 @@ module Attempt2 where
   eval ρ (t · u)       = app-val (eval ρ t) (eval ρ u)
   eval ρ (ƛ t)         = val λ u → eval (ρ , u) t
   eval ρ tt            = val tt
-  eval ρ ze            = val zero
+  eval ρ ze            = val ze
   eval ρ (su n)        = suc-val (eval ρ n)
   eval ρ (ℕ-rec z s n) = ℕ-rec-val (eval ρ z) (eval ρ s) (eval ρ n)
 
-  -- Stuck again! 'Ne'utrals are *also* not 'Val'ues
+  -- Of course, we get stuck again. The only way to apply a 'Var'iable to
+  -- something is to build a 'Ne'utral (note if we try to implement 'reflect' 
+  -- we will hit exactly the same trouble as before).
   app-val (val t) u = t u
   app-val (var i) u = {!!}
 
-  -- Also stuck implementing the 'ℕ' constructor/recursor on 'Val's. We need
-  -- 'suc' to accept neutrals
-  suc-val (val n) = val (suc n)
+  -- We also get stuck implementing the 'ℕ' constructor/recursor on 'Val's. 
+  -- We need 'Val'ue 'su' to accept neutrals
+  suc-val (val n) = val (su n)
   suc-val (var i) = {!!}
 
-  ℕ-rec-val z s (val zero)    = z
-  ℕ-rec-val z s (val (suc n)) = app-val s (ℕ-rec-val z s (val n))
-  ℕ-rec-val z s (var i) = {!!}
+  ℕ-rec-val z s (val ze)    = z
+  ℕ-rec-val z s (val (su n)) = app-val s (ℕ-rec-val z s (val n))
+  ℕ-rec-val z s (var i)       = {!!}

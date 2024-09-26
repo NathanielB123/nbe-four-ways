@@ -1,18 +1,10 @@
 {-# OPTIONS --rewriting --local-confluence-check #-}
 
+open import Utils
 open import Syntax
 open import Subst
 
 module Choice2 where 
-
-data ⊤Val (Γ : Ctx) : Set where
-  tt : ⊤Val Γ
-  -- We could also remove the 'Ne'utral case here to get η for '⊤'
-  -- In fact, whether we allow 'Ne'utral values for each type former can be seen
-  -- as a decision of whether we want η or not (though, we can't just get
-  -- η for every type - specifically just the ones where 'reflect' can stay
-  -- structurally recursive)
-  ne : Ne Γ ⊤' → ⊤Val Γ
 
 data ℕVal (Γ : Ctx) : Set where
   ze : ℕVal Γ
@@ -20,7 +12,9 @@ data ℕVal (Γ : Ctx) : Set where
   ne : Ne Γ ℕ' → ℕVal Γ
 
 Val : Ctx → Ty → Set
-Val Γ ⊤'      = ⊤Val Γ
+-- Unlike Bowman's version, we rule out the possibility of 'Ne'utral '⊤'s. This
+-- way, we get η for '_⇒_' AND '⊤'.
+Val Γ ⊤'      = ⊤
 Val Γ ℕ'      = ℕVal Γ
 -- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
 -- a sequence of additional 'Var'iables which can be thrown onto the front
@@ -34,7 +28,6 @@ wk*-val {A = ⊤'}    Δ tt     = tt
 wk*-val {A = ℕ'}    Δ ze     = ze
 wk*-val {A = ℕ'}    Δ (su n) = su (wk*-val Δ n)
 wk*-val {A = A ⇒ B} Δ t Θ u  = t (Δ ++ Θ) u
-wk*-val {A = ⊤'}    Δ (ne t) = ne (wk*-ne Δ t)
 wk*-val {A = ℕ'}    Δ (ne t) = ne (wk*-ne Δ t)
 
 reify   : Val Γ A → Nf Γ A
@@ -61,14 +54,15 @@ eval ρ (ℕ-rec z s n) = ℕ-rec-val (eval ρ z) (eval ρ s) (eval ρ n)
 ℕ-rec-val z s (ne t) = reflect (ℕ-rec (reify z) (reify s) t)
 
 reify {A = ⊤'}    tt     = tt
-reify {A = ⊤'}    (ne t) = ne t
 reify {A = ℕ'}    ze     = ze
 reify {A = ℕ'}    (su n) = su (reify n)
 reify {A = ℕ'}    (ne n) = ne n
 reify {A = A ⇒ B} t      = ƛ (reify (t (ε , A) (reflect (` vz))))
 
-reflect {A = ⊤'}    t     = ne t
 reflect {A = ℕ'}    n     = ne n
+-- η for '⊤'
+reflect {A = ⊤'}    t     = tt
+-- η for '_⇒_'
 reflect {A = A ⇒ B} t Δ u = reflect (wk*-ne Δ t · reify u)
 
 norm : Tm Γ A → Nf Γ A
