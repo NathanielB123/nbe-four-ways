@@ -38,13 +38,9 @@ reflect {A = ⊤'}    = ne
 reflect {A = ℕ'}    = ne
 reflect {A = A ⇒ B} = ne 
 
-data Env (Δ : Ctx) : Ctx → Set where
-  ε   : Env Δ ε
-  _,_ : Env Δ Γ → Val Δ A → Env Δ (Γ , A)
 
 wk*-val   : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
 wk*-neval : ∀ Δ → NeVal Γ A → NeVal (Γ ++ Δ) A
-wk*-env   : ∀ Θ → Env Δ Γ → Env (Δ ++ Θ) Γ
 
 wk*-val {A = ⊤'}    Δ tt      = tt
 wk*-val {A = ℕ'}    Δ ze      = ze
@@ -58,8 +54,7 @@ wk*-neval Δ (` i)         = ` (i [ wk* Δ ])
 wk*-neval Δ (t · u)       = wk*-neval Δ t · wk*-val Δ u
 wk*-neval Δ (ℕ-rec z s n) = ℕ-rec (wk*-val Δ z) (wk*-val Δ s) (wk*-neval Δ n)
 
-wk*-env Θ ε       = ε
-wk*-env Θ (ρ , t) = wk*-env Θ ρ , wk*-val Θ t
+open import Env Val wk*-val (reflect (` vz))
 
 app-val : Val Γ (A ⇒ B) → Val Γ A → Val Γ B
 app-val (lam t) u = t ε u
@@ -96,3 +91,6 @@ reify {A = A ⇒ B} (ne t)  = ne (reify-ne t)
 reify-ne (` i)         = ` i
 reify-ne (t · u)       = reify-ne t · reify u
 reify-ne (ℕ-rec z s n) = ℕ-rec (reify z) (reify s) (reify-ne n)
+
+norm : Tm Γ A → Nf Γ A
+norm t = reify (eval idᴱ t)

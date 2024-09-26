@@ -28,12 +28,7 @@ Val Γ ℕ'      = ℕVal Γ
 -- The original lisp code avoids this complexity by using named variables
 Val Γ (A ⇒ B) = ∀ Δ → Val (Γ ++ Δ) A → Val (Γ ++ Δ) B
 
-data Env (Δ : Ctx) : Ctx → Set where
-  ε   : Env Δ ε
-  _,_ : Env Δ Γ → Val Δ A → Env Δ (Γ , A)
-
 wk*-val  : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
-wk*-env  : ∀ Θ → Env Δ Γ → Env (Δ ++ Θ) Γ
 
 wk*-val {A = ⊤'}    Δ tt     = tt
 wk*-val {A = ℕ'}    Δ ze     = ze
@@ -42,13 +37,14 @@ wk*-val {A = A ⇒ B} Δ t Θ u  = t (Δ ++ Θ) u
 wk*-val {A = ⊤'}    Δ (ne t) = ne (wk*-ne Δ t)
 wk*-val {A = ℕ'}    Δ (ne t) = ne (wk*-ne Δ t)
 
-wk*-env Θ ε       = ε
-wk*-env Θ (ρ , t) = wk*-env Θ ρ , wk*-val Θ t
+reify   : Val Γ A → Nf Γ A
+reflect : Ne Γ A → Val Γ A
+
+open import Env Val wk*-val (reflect (` vz))
 
 eval : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
 ℕ-rec-val : Val Γ A → (Val Γ (A ⇒ A)) → Val Γ ℕ' → Val Γ A
-reify   : Val Γ A → Nf Γ A
-reflect : Ne Γ A → Val Γ A
+
 
 eval (ρ , t) vz      = t
 eval (ρ , t) (vs i)  = eval ρ i
@@ -74,3 +70,6 @@ reify {A = A ⇒ B} t      = ƛ (reify (t (ε , A) (reflect (` vz))))
 reflect {A = ⊤'}    t     = ne t
 reflect {A = ℕ'}    n     = ne n
 reflect {A = A ⇒ B} t Δ u = reflect (wk*-ne Δ t · reify u)
+
+norm : Tm Γ A → Nf Γ A
+norm t = reify (eval idᴱ t)

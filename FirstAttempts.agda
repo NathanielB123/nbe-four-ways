@@ -36,8 +36,8 @@ module Attempt1 where
   eval ρ (su n)        = suc (eval ρ n)
   eval ρ (ℕ-rec z s n) = ℕ-recurse (eval ρ z) (eval ρ s) (eval ρ n)
 
-  module Example-ChurchEval where
-    open Example-Church
+  module Example-ChurchNatEval where
+    open Example-ChurchNats
 
     church-two : Val (Cℕ A)
     church-two = eval ε (C+ · (Csuc · Czero)  · (Csuc · Czero))
@@ -77,12 +77,12 @@ module Attempt2 where
   ℕ-rec-val : Val Γ A → Val Γ (A ⇒ A) → Val Γ ℕ' → Val Γ A
 
   eval : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
-  eval (ρ , t) vz     = t
-  eval (ρ , t) (vs i) = eval ρ i
-  eval ρ (` i)        = eval ρ i
-  eval ρ (t · u)      = app-val (eval ρ t) (eval ρ u)
-  eval ρ (ƛ t)        = val λ u → eval (ρ , u) t
-  eval ρ tt           = val tt
+  eval (ρ , t) vz      = t
+  eval (ρ , t) (vs i)  = eval ρ i
+  eval ρ (` i)         = eval ρ i
+  eval ρ (t · u)       = app-val (eval ρ t) (eval ρ u)
+  eval ρ (ƛ t)         = val λ u → eval (ρ , u) t
+  eval ρ tt            = val tt
   eval ρ ze            = val zero
   eval ρ (su n)        = suc-val (eval ρ n)
   eval ρ (ℕ-rec z s n) = ℕ-rec-val (eval ρ z) (eval ρ s) (eval ρ n)

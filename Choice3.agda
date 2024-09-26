@@ -30,6 +30,8 @@ reflect {A = ⊤'}    = ne
 reflect {A = ℕ'}    = ne
 reflect {A = A ⇒ B} = ne
 
+-- Unfortunately we can't use the abstract 'Env' module here because 'wk*' for
+-- 'Val'ues and 'Env'ironments here is mutually recursive 
 data Env Δ where
   ε   : Env Δ ε
   _,_ : Env Δ Γ → Val Δ A → Env Δ (Γ , A)
@@ -48,8 +50,12 @@ wk*-val {A = A ⇒ B} Δ (ne t)    = ne (wk*-ne Δ t)
 wk*-env Θ ε       = ε
 wk*-env Θ (ρ , t) = wk*-env Θ ρ , wk*-val Θ t
 
-_^e_ : Env Δ Γ → ∀ A → Env (Δ , A) (Γ , A)
-ρ ^e A = wk*-env (ε , A) ρ , reflect (` vz)
+_^ᴱ_ : Env Δ Γ → ∀ A → Env (Δ , A) (Γ , A)
+ρ ^ᴱ A = wk*-env (ε , A) ρ , reflect (` vz)
+
+idᴱ : Env Γ Γ
+idᴱ {Γ = ε}     = ε
+idᴱ {Γ = Γ , A} = idᴱ ^ᴱ A
 
 -- I don't know how to make 'Choice3' work without asserting termination.
 -- It sort-of makes sense why this approach isn't structurally recursive: the
@@ -93,7 +99,10 @@ app-val (ne t) u    = reflect (t · reify u)
 reify {A = ⊤'}    tt        = tt
 reify {A = ℕ'}    ze        = ze
 reify {A = ℕ'}    (su n)    = su (reify n)
-reify {A = A ⇒ B} (clo ρ t) = ƛ reify (eval (ρ ^e A) t)
+reify {A = A ⇒ B} (clo ρ t) = ƛ reify (eval (ρ ^ᴱ A) t)
 reify {A = ⊤'}    (ne t)     = ne t
 reify {A = ℕ'}    (ne t)     = ne t
 reify {A = A ⇒ B} (ne t)     = ne t
+
+norm : Tm Γ A → Nf Γ A
+norm t = reify (eval idᴱ t)

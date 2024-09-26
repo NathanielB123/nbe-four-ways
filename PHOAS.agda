@@ -49,7 +49,7 @@ module _ {V : Ctx → Ty → Set} where
 ⌜ ƛ t ⌝ = ƛ ⌜ t vz ⌝
 ⌜ t · u ⌝ = ⌜ t ⌝ · ⌜ u ⌝
 
-module Example-Church where
+module Example-ChurchNats where
   Cℕ : Ty → Ty
   Cℕ A = (A ⇒ A) ⇒ A ⇒ A
 
