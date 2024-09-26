@@ -15,6 +15,10 @@ data ℕVal (Γ : Ctx) : Set where
   ne  : Ne Γ ℕ' → ℕVal Γ
 
 data ⇒Val (Γ : Ctx) (A B : Ty) (ValA ValB : Ctx → Set) : Set where
+  -- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
+  -- a sequence of additional 'Var'iables which can be thrown onto the front
+  -- of the context
+  -- The original lisp code avoids this complexity by using named variables
   lam : (∀ Δ → ValA (Γ ++ Δ) → ValB (Γ ++ Δ)) → ⇒Val Γ A B ValA ValB
   ne  : Ne Γ (A ⇒ B) → ⇒Val Γ A B ValA ValB
 
