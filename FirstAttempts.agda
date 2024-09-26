@@ -56,7 +56,7 @@ module Attempt1 where
   reflect {A = A ⇒ B} t u = reflect (t · reify u)
   -- Unfortunately, we still get stuck. The η-rule for 'ℕ' isn't structurally
   -- recursive on 'Ty'pes like '⊤' and '_⇒_'.
-  -- However, if we stick to an object theory without any inductive types, then 
+  -- However, if we stick to an object theory with only negative types, then 
   -- we actually can make this sort-of work - see 'ExtremeEta'
   reflect {A = ℕ'}    t   = reflect (ℕ-rec ze (ƛ su (ne (` vz))) t)
 

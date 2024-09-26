@@ -1,8 +1,8 @@
 open import Utils
 
--- If we only include type formers for which η is easy (e.g. '⊤', '_⇒_') we can
--- actually define 'eval' and 'reify' without adding 'Var'iables/'Ne'utrals to
--- to 'Val'ues. 
+-- If we only include type formers for which η is easy (e.g. '⊤', '_⇒_') 
+-- (specifically, negative types) we can actually define 'eval' and 'reify' 
+-- without adding 'Var'iables/'Ne'utrals to to 'Val'ues. 
 -- Of course, this is cheating. In this restricted language, we can trivially 
 -- build the unique normal form term of any type, 'A', by recursion on 'A' 
 -- alone.
