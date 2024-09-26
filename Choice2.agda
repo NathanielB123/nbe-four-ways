@@ -38,7 +38,6 @@ open import Env Val wk*-val (reflect (` vz))
 eval : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
 ℕ-rec-val : Val Γ A → (Val Γ (A ⇒ A)) → Val Γ ℕ' → Val Γ A
 
-
 eval (ρ , t) vz      = t
 eval (ρ , t) (vs i)  = eval ρ i
 eval ρ (` i)         = eval ρ i
@@ -67,3 +66,23 @@ reflect {A = A ⇒ B} t Δ u = reflect (wk*-ne Δ t · reify u)
 
 norm : Tm Γ A → Nf Γ A
 norm t = reify (eval idᴱ t)
+
+module Example-Norm where
+  open import Examples
+  open Example-ChurchNats
+
+  test-Ctwo-ℕ : norm (Ctwo {Γ = ε} {A = ℕ'}) 
+              ≡ ƛ (ƛ ne (` vs vz · ne (` vs vz · ne (` vz))))
+  test-Ctwo-ℕ = refl
+
+  test-Ctwo-⊤ : norm (Ctwo {Γ = ε} {A = ⊤'}) 
+              ≡ ƛ ƛ tt
+  test-Ctwo-⊤ = refl
+
+  open Example-Apply
+  
+  test-apply : norm (apply {Γ = ε} {A = ℕ' ⇒ ℕ'} {B = ℕ' ⇒ ℕ'})
+             ≡ ƛ ƛ ƛ ne (` vs (vs vz) · (ƛ ne (` vs (vs vz) 
+                                      · ne (` vz))) · ne (` vz))
+  test-apply = refl
+  

@@ -4,7 +4,7 @@ open import Utils
 open import Syntax
 open import Subst
 
-module PHOAS where
+module Examples where
 
 -- Context-indexed PHOAS. Just so we can name the variables in our examples
 -- Indexing by context lets us easily convert into de Bruijn terms (by 
@@ -61,3 +61,10 @@ module Example-ChurchNats where
 
   C+ : Tm Γ (Cℕ A ⇒ Cℕ A ⇒ Cℕ A)
   C+ = ⌜ ƛ4 (λ x y s z → (`3 x · `1 s) · (`2 y · `1 s · `0 z)) ⌝
+
+  Ctwo : Tm Γ (Cℕ A)
+  Ctwo = C+ · (Csuc · Czero)  · (Csuc · Czero)
+
+module Example-Apply where
+  apply : Tm Γ ((A ⇒ B) ⇒ A ⇒ B)
+  apply = ⌜ ƛ2 (λ f g → `1 f · `0 g) ⌝

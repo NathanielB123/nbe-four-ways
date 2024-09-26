@@ -2,7 +2,7 @@
 
 open import Utils
 open import Syntax
-open import PHOAS
+open import Examples
 
 module FirstAttempts where
 
@@ -39,10 +39,7 @@ module Attempt1 where
   module Example-ChurchNatEval where
     open Example-ChurchNats
 
-    church-two : Val (Cℕ A)
-    church-two = eval ε (C+ · (Csuc · Czero)  · (Csuc · Czero))
-
-    test : church-two {A = A} ≡ λ s z → s (s z)
+    test : eval ε (Ctwo {A = A}) ≡ λ s z → s (s z)
     test = refl
 
   reify   : Val A → Nf Γ A

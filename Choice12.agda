@@ -1,5 +1,6 @@
 {-# OPTIONS --rewriting --local-confluence-check #-}
 
+open import Utils
 open import Syntax
 open import Subst
 
@@ -78,3 +79,17 @@ reify {A = A ⇒ B} (ne t)  = ne t
 
 norm : Tm Γ A → Nf Γ A
 norm t = reify (eval idᴱ t)
+
+module Example-Norm where
+  open import Examples
+  open Example-ChurchNats
+
+  test-Ctwo : norm (Ctwo {Γ = ε} {A = ⊤'}) 
+            ≡ ƛ (ƛ ne (` vs vz · ne (` vs vz · ne (` vz))))
+  test-Ctwo = refl
+
+  open Example-Apply
+  
+  test-apply : norm (apply {Γ = ε} {A = ℕ' ⇒ ℕ'} {B = ℕ' ⇒ ℕ'})
+             ≡ ƛ (ƛ ne (` vs vz · ne (` vz)))
+  test-apply = refl

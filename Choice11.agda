@@ -38,7 +38,6 @@ reflect {A = ⊤'}    = ne
 reflect {A = ℕ'}    = ne
 reflect {A = A ⇒ B} = ne 
 
-
 wk*-val   : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
 wk*-neval : ∀ Δ → NeVal Γ A → NeVal (Γ ++ Δ) A
 
