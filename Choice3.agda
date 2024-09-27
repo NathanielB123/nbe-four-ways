@@ -28,10 +28,6 @@ record ⇒PreVal (Γ : Ctx) (A B : Ty) : Set where
 
 PreVal Γ ⊤'      = ⊤
 PreVal Γ ℕ'      = ℕPreVal Γ
--- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
--- a sequence of additional 'Var'iables which can be thrown onto the front
--- of the context
--- The original lisp code avoids this complexity by using named variables
 PreVal Γ (A ⇒ B) = ⇒PreVal Γ A B
 
 Val Γ A = PreVal Γ A ⊎ Ne Γ A
@@ -81,9 +77,9 @@ idᴱ {Γ = Γ , A} = idᴱ ^ᴱ A
 -- become unblocked after a substitution)
 
 {-# TERMINATING #-}
-eval    : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
-app-val : Val Γ (A ⇒ B) → Val Γ A → Val Γ B
-reify   : Val Γ A → Nf Γ A
+eval      : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
+app-val   : Val Γ (A ⇒ B) → Val Γ A → Val Γ B
+reify     : Val Γ A → Nf Γ A
 ℕ-rec-val : Val Γ A → Val Γ (A ⇒ A) → Val Γ ℕ' → Val Γ A
 
 eval ρ (` i)         = eval ρ i
@@ -103,6 +99,8 @@ app-val (reflect t)     u = reflect (t · reify u)
 ℕ-rec-val z s (val (su n)) = app-val s (ℕ-rec-val z s n)
 ℕ-rec-val z s (reflect t)  = reflect (ℕ-rec (reify z) (reify s) t)
 
+-- Note that, if desired, we can implement 'η' reductions here similarly to 
+-- 'Choice12' by blocking on the type of 'reflect'ed 'Ne'utrals.
 reify             (reflect t)     = ne t
 reify {A = ⊤'}    (val tt)        = tt
 reify {A = ℕ'}    (val ze)        = ze
@@ -111,3 +109,11 @@ reify {A = A ⇒ B} (val (clo ρ t)) = ƛ reify (eval (ρ ^ᴱ A) t)
 
 norm : Tm Γ A → Nf Γ A
 norm t = reify (eval idᴱ t)
+
+module Example-Norm where
+  open import Examples
+  open Example-ChurchNats
+
+  test-Ctwo : norm (Ctwo {Γ = Γ} {A = A}) 
+            ≡ ƛ (ƛ ne (` vs vz · ne (` vs vz · ne (` vz))))
+  test-Ctwo = refl

@@ -13,7 +13,7 @@ data ℕVal (Γ : Ctx) : Set where
 
 Val : Ctx → Ty → Set
 -- Unlike Bowman's version, we rule out the possibility of 'Ne'utral '⊤'s. This
--- way, we get η for '_⇒_' AND '⊤'.
+-- way, we enforce values are η-normal for '⊤' and '_⇒_'
 Val Γ ⊤'      = ⊤
 Val Γ ℕ'      = ℕVal Γ
 -- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
@@ -78,7 +78,7 @@ module Example-Norm where
   test-Ctwo-ℕ = refl
 
   -- On the upside, blocking on the type means we can implement type-directed
-  -- reductions - in other words, we can respect eta-equalities!
+  -- reductions; in other words, we can respect eta-equalities!
   test-Ctwo-⊤ : norm (Ctwo {Γ = Γ} {A = ⊤'}) 
               ≡ ƛ ƛ tt
   test-Ctwo-⊤ = refl
