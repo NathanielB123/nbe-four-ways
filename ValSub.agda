@@ -7,6 +7,9 @@ open import Subst
 
 -- A demonstration of how to implement structurally recursive substitutions
 -- over 'Val'ues WITHOUT calling 'reify'!
+
+-- I think this could have some really exciting applications towards NbE for
+-- dependent types...
 module ValSub where
 
 ℕVal : Ctx → Set
@@ -77,7 +80,6 @@ _++v_ : Vars Δ Γ → Vars Δ Θ → Vars Δ (Γ ++ Θ)
 collapse : Vars Γ (Γ ++ Γ)
 collapse = id ++v id
 
-
 -- Can just inject back into `Tm` and re-`eval`, easy!
 A       ∋ reflect t  [ δ ]val = eval δ (ne→tm t)
 
@@ -86,9 +88,6 @@ A       ∋ reflect t  [ δ ]val = eval δ (ne→tm t)
 ℕ'      ∋ val (su n) [ δ ]val = val (su (ℕ' ∋ n [ δ ]val))
 
 _∋_[_]val {Γ = Γ} {Δ = Δ} (A ⇒ B) (val t) δ
-  = val λ Θ σ u → B ∋ (B ∋ t _ (wk* Θ) (A ∋ u [ wk*-front Γ ]val-ren) 
-                                              [ δ ^ᴱ* Θ ]val) 
-                                              [ (σ ^* Θ) ⨾v collapse ]val-ren
-
-   
-   
+  = val λ Θ σ u → B ∋ (B ∋ t (Γ ++ Θ) (wk* Θ) (A ∋ u [ wk*-front Γ ]val-ren) 
+                         [ δ ^ᴱ* Θ ]val) 
+                    [ (σ ^* Θ) ⨾v collapse ]val-ren
