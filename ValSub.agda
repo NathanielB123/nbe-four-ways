@@ -77,9 +77,6 @@ _++v_ : Vars Δ Γ → Vars Δ Θ → Vars Δ (Γ ++ Θ)
 δ ++v ε       = δ
 δ ++v (σ , i) = (δ ++v σ) , i
 
-collapse : Vars Γ (Γ ++ Γ)
-collapse = id ++v id
-
 -- Can just inject back into `Tm` and re-`eval`, easy!
 A       ∋ reflect t  [ δ ]val = eval δ (ne→tm t)
 
@@ -87,7 +84,8 @@ A       ∋ reflect t  [ δ ]val = eval δ (ne→tm t)
 ℕ'      ∋ val ze     [ δ ]val = val ze
 ℕ'      ∋ val (su n) [ δ ]val = val (su (ℕ' ∋ n [ δ ]val))
 
+
 _∋_[_]val {Γ = Γ} {Δ = Δ} (A ⇒ B) (val t) δ
   = val λ Θ σ u → B ∋ (B ∋ t (Γ ++ Θ) (wk* Θ) (A ∋ u [ wk*-front Γ ]val-ren) 
                          [ δ ^ᴱ* Θ ]val) 
-                    [ (σ ^* Θ) ⨾v collapse ]val-ren
+                    [ σ ++v id ]val-ren
