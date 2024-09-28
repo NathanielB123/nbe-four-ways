@@ -37,11 +37,6 @@ data Env (Δ : Ctx) : Ctx → Set where
   ε   : Env Δ ε
   _,_ : Env Δ Γ → Val Δ A → Env Δ (Γ , A)
 
--- Refer to 'Choice12' for how we would actually implement 'eval'uation (just
--- recursion over terms). I will skip over the definition here
-postulate eval : Env Δ Γ → Tm Γ A → Val Δ A
-
-_∋_[_]val : ∀ A → Val Γ A → Env Δ Γ → Val Δ A
 
 _⨾v_ : Vars Δ Γ → Vars Θ Δ → Vars Θ Γ
 ε ⨾v σ       = ε
@@ -77,6 +72,43 @@ _++v_ : Vars Δ Γ → Vars Δ Θ → Vars Δ (Γ ++ Θ)
 δ ++v ε       = δ
 δ ++v (σ , i) = (δ ++v σ) , i
 
+-- Evaluation isn't the main focus of this module, but we need it to do
+-- substitutions on neutrals...
+module Eval where
+  reify : Val Γ A → Nf Γ A
+  reify             (reflect t)  = ne t
+  reify {A = ⊤'}    (val tt)     = tt
+  reify {A = ℕ'}    (val ze)     = ze
+  reify {A = ℕ'}    (val (su n)) = su (reify n)
+  reify {A = A ⇒ B} (val t)      = ƛ reify (t _ (id ⁺) (reflect (` vz)))
+
+  eval      : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
+  app-val   : Val Γ (A ⇒ B) → Val Γ A → Val Γ B
+  ℕ-rec-val : Val Γ A → Val Γ (A ⇒ A) → Val Γ ℕ' → Val Γ A
+
+
+  eval ρ (` i)         = eval ρ i
+  eval (ρ , t) vz      = t
+  eval (ρ , t) (vs i)  = eval ρ i
+  eval ρ (t · u)       = app-val (eval ρ t) (eval ρ u)
+  eval ρ (ƛ t)         = val (λ Δ δ u → eval (ρ [ δ ]env-ren , u) t)
+  eval ρ tt            = val tt
+  eval ρ ze            = val ze
+  eval ρ (su n)        = val (su (eval ρ n))
+  eval ρ (ℕ-rec z s n) = ℕ-rec-val (eval ρ z) (eval ρ s) (eval ρ n)
+
+  ℕ-rec-val z s (val ze)     = z
+  ℕ-rec-val z s (val (su n)) = app-val s (ℕ-rec-val z s n)
+  ℕ-rec-val z s (reflect t)  = reflect (ℕ-rec (reify z) (reify s) t)
+
+  app-val (val t)     u = t _ id u
+  app-val (reflect t) u = reflect (t · reify u)
+
+open Eval using (eval)
+
+
+_∋_[_]val : ∀ A → Val Γ A → Env Δ Γ → Val Δ A
+
 -- Can just inject back into `Tm` and re-`eval`, easy!
 A       ∋ reflect t  [ δ ]val = eval δ (ne→tm t)
 
@@ -84,7 +116,7 @@ A       ∋ reflect t  [ δ ]val = eval δ (ne→tm t)
 ℕ'      ∋ val ze     [ δ ]val = val ze
 ℕ'      ∋ val (su n) [ δ ]val = val (su (ℕ' ∋ n [ δ ]val))
 
-
+-- The interesting case!
 _∋_[_]val {Γ = Γ} {Δ = Δ} (A ⇒ B) (val t) δ
   = val λ Θ σ u → B ∋ (B ∋ t (Γ ++ Θ) (wk* Θ) (A ∋ u [ wk*-front Γ ]val-ren) 
                          [ δ ^ᴱ* Θ ]val) 
