@@ -78,3 +78,16 @@ data Nf where
   
   ze  : Nf Γ ℕ'
   su  : Nf Γ ℕ' → Nf Γ ℕ'
+
+ne→tm : Ne Γ A → Tm Γ A
+nf→tm : Nf Γ A → Tm Γ A
+
+ne→tm (` i)         = ` i
+ne→tm (t · u)       = ne→tm t · nf→tm u
+ne→tm (ℕ-rec z s n) = ℕ-rec (nf→tm z) (nf→tm s) (ne→tm n)
+
+nf→tm (ne t) = ne→tm t
+nf→tm (ƛ t)  = ƛ nf→tm t
+nf→tm tt     = tt
+nf→tm ze     = ze
+nf→tm (su n) = su (nf→tm n)

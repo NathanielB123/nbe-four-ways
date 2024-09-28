@@ -84,8 +84,8 @@ reify-η {A = ⊤'}    _            = tt
 reify-η {A = A ⇒ B} (reflect t)  = ƛ ne (wk*-ne (ε , A) t · ne (` vz))
 reify-η {A = ℕ'}    (reflect t)  = ne t
 
-open Eval reify using (eval)
-open Eval reify-η renaming (eval to eval-η)
+open Eval reify   using    (eval)           public
+open Eval reify-η renaming (eval to eval-η) public
 
 norm : Tm Γ A → Nf Γ A
 norm t = reify (eval idᴱ t)

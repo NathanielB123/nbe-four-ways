@@ -48,14 +48,14 @@ data Ty where
   _⇒_ : Ty → Ty → Ty
 
 data Tm[_] where
-  vz    : Var (Γ , A) A
-  vs    : Var Γ B → Var (Γ , A) B
+  vz  : Var (Γ , A) A
+  vs  : Var Γ B → Var (Γ , A) B
   
-  `_    : Var Γ A → Tm Γ A
-  _·_   : Tm Γ (A ⇒ B) → Tm Γ A → Tm Γ B
-  ƛ_    : Tm (Γ , A) B → Tm Γ (A ⇒ B)
+  `_  : Var Γ A → Tm Γ A
+  _·_ : Tm Γ (A ⇒ B) → Tm Γ A → Tm Γ B
+  ƛ_  : Tm (Γ , A) B → Tm Γ (A ⇒ B)
   
-  tt    : Tm Γ ⊤'
+  tt  : Tm Γ ⊤'
 
 tm⊑ : Tm[ q ] Γ A → Tm Γ A
 tm⊑ {q = V} i = ` i

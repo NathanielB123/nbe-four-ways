@@ -35,7 +35,7 @@ reflect : Ne Γ A → Val Γ A
 
 open import Env Val wk*-val (reflect (` vz))
 
-eval : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
+eval      : Env Δ Γ → Tm[ q ] Γ A → Val Δ A
 ℕ-rec-val : Val Γ A → (Val Γ (A ⇒ A)) → Val Γ ℕ' → Val Γ A
 
 eval ρ (` i)         = eval ρ i
@@ -56,7 +56,7 @@ reify {A = ⊤'}    tt     = tt
 reify {A = ℕ'}    ze     = ze
 reify {A = ℕ'}    (su n) = su (reify n)
 reify {A = ℕ'}    (ne n) = ne n
-reify {A = A ⇒ B} t      = ƛ (reify (t (ε , A) (reflect (` vz))))
+reify {A = A ⇒ B} t      = ƛ reify (t (ε , A) (reflect (` vz)))
 
 reflect {A = ℕ'}    n     = ne n
 -- η for '⊤'
