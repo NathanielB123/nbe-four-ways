@@ -41,20 +41,20 @@ data Env Δ where
   ε   : Env Δ ε
   _,_ : Env Δ Γ → Val Δ A → Env Δ (Γ , A)
 
-wk*-val  : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
-wk*-env  : ∀ Θ → Env Δ Γ → Env (Δ ++ Θ) Γ
+_∋_[_]val : ∀ A → Val Γ A → Vars Δ Γ → Val Δ A
+_[_]env : Env Δ Γ → Vars Θ Δ → Env Θ Γ
 
-wk*-val             Δ (reflect t)     = reflect (wk*-ne Δ t)
-wk*-val {A = ⊤'}    Δ (val tt)        = val tt
-wk*-val {A = ℕ'}    Δ (val ze)        = val ze
-wk*-val {A = ℕ'}    Δ (val (su n))    = val (su (wk*-val Δ n))
-wk*-val {A = A ⇒ B} Δ (val (clo ρ t)) = val (clo (wk*-env Δ ρ) t)
+A       ∋ reflect t     [ δ ]val = reflect (t [ δ ]ne)
+⊤'      ∋ val tt        [ δ ]val = val tt
+ℕ'      ∋ val ze        [ δ ]val = val ze
+ℕ'      ∋ val (su n)    [ δ ]val = val (su (ℕ' ∋ n [ δ ]val))
+(A ⇒ B) ∋ val (clo ρ t) [ δ ]val = val (clo (ρ [ δ ]env) t)
 
-wk*-env Θ ε       = ε
-wk*-env Θ (ρ , t) = wk*-env Θ ρ , wk*-val Θ t
+ε       [ δ ]env = ε
+(ρ , t) [ δ ]env = (ρ [ δ ]env) , (_ ∋ t [ δ ]val)
 
 _^ᴱ_ : Env Δ Γ → ∀ A → Env (Δ , A) (Γ , A)
-ρ ^ᴱ A = wk*-env (ε , A) ρ , reflect (` vz)
+ρ ^ᴱ A = (ρ [ id ⁺ ]env) , reflect (` vz)
 
 idᴱ : Env Γ Γ
 idᴱ {Γ = ε}     = ε
@@ -117,3 +117,4 @@ module Example-Norm where
   test-Ctwo : norm (Ctwo {Γ = Γ} {A = A}) 
             ≡ ƛ (ƛ ne (` vs vz · ne (` vs vz · ne (` vz))))
   test-Ctwo = refl
+ 

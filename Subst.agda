@@ -1,25 +1,7 @@
-{-# OPTIONS --rewriting --local-confluence-check #-}
-
-import Agda.Builtin.Equality.Rewrite
-
 open import Utils
 open import Syntax
 
 module Subst where
-
-_++_ : Ctx → Ctx → Ctx
-Γ ++ ε       = Γ
-Γ ++ (Δ , A) = (Γ ++ Δ) , A
-
-++-assoc : Γ ++ (Δ ++ Θ) ≡ (Γ ++ Δ) ++ Θ
-++-assoc {Θ = ε}     = refl
-++-assoc {Θ = Θ , A} = cong₂ _,_ (++-assoc {Θ = Θ}) refl
-
-{-# REWRITE ++-assoc #-}
-
-vs* : ∀ Δ → Var Γ A → Var (Γ ++ Δ) A
-vs* ε i       = i
-vs* (Δ , B) i = vs (vs* Δ i)
 
 -- Technically, we only *really* need weakening, but we might as well define 
 -- substitutions in their full generality!
@@ -68,13 +50,6 @@ ze          [ δ ]     = ze
 su n        [ δ ]     = su (n [ δ ])
 ℕ-rec z s n [ δ ]     = ℕ-rec (z [ δ ]) (s [ δ ]) (n [ δ ])
 
-wk*[_] : ∀ q Δ → Tms[ q ] (Γ ++ Δ) Γ
-wk*[ q ] ε       = id[ q ]
-wk*[ q ] (Δ , A) = wk*[ q ] Δ ⁺
-
-wk* : ∀ Δ → Vars (Γ ++ Δ) Γ
-wk* = wk*[ V ]
-
 _[_]ne : Ne Γ A → Vars Δ Γ → Ne Δ A
 _[_]nf : Nf Γ A → Vars Δ Γ → Nf Δ A
 
@@ -88,5 +63,24 @@ tt    [ δ ]nf = tt
 ze    [ δ ]nf = ze
 su n  [ δ ]nf = su (n [ δ ]nf)
 
-wk*-ne  : ∀ Δ → Ne Γ B → Ne (Γ ++ Δ) B
-wk*-ne Δ t = t [ wk* Δ ]ne
+_⨾_ : Tms[ q ] Δ Γ → Tms[ r ] Θ Δ → Tms[ q ⊔ r ] Θ Γ
+ε ⨾ σ       = ε
+(δ , x) ⨾ σ = (δ ⨾ σ) , (x [ σ ])
+
+_++_ : Ctx → Ctx → Ctx
+Γ ++ ε       = Γ
+Γ ++ (Δ , A) = (Γ ++ Δ) , A
+
+wk*[_] : ∀ q Δ → Tms[ q ] (Γ ++ Δ) Γ
+wk*[ q ] ε       = id[ q ]
+wk*[ q ] (Δ , A) = wk*[ q ] Δ ⁺
+
+wk* : ∀ Δ → Vars (Γ ++ Δ) Γ
+wk* = wk*[ V ]
+
+*wk[_] : ∀ q Γ → Tms[ q ] (Δ ++ Γ) Γ
+*wk[ q ] ε       = ε
+*wk[ q ] (Γ , A) = *wk[ q ] Γ ^ A
+
+*wk : ∀ Γ → Vars (Δ ++ Γ) Γ
+*wk = *wk[ _ ]

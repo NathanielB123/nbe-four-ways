@@ -6,6 +6,10 @@ open import Subst
 
 module Examples where
 
+vs* : ∀ Δ → Var Γ A → Var (Γ ++ Δ) A
+vs* ε i       = i
+vs* (Δ , B) i = vs (vs* Δ i)
+
 -- Context-indexed PHOAS. Just so we can name the variables in our examples
 -- Indexing by context lets us easily convert into de Bruijn terms (by 
 -- structural recursion)
@@ -17,16 +21,16 @@ data PHOAS (V : Ctx → Ty → Set) : Ctx → Ty → Set where
 
 module _ {V : Ctx → Ty → Set} where
   `0_ : V Γ A → PHOAS V Γ A
-  `0_ = `_ {Δ = ε}
+  `0_ = `_
 
   `1_ : V Γ B → PHOAS V (Γ , A) B
-  `1_ = `_ {Δ = ε , _}
+  `1_ = `_
 
   `2_ : V Γ C → PHOAS V (Γ , A , B) C
-  `2_ = `_ {Δ = ε , _ , _}
+  `2_ = `_
 
   `3_ : V Γ D → PHOAS V (Γ , A , B , C) D
-  `3_ = `_ {Δ = ε , _ , _ , _}
+  `3_ = `_
 
   pattern `[_]_ Δ i = `_ {Δ = Δ} i 
 
@@ -46,8 +50,8 @@ module _ {V : Ctx → Ty → Set} where
 
 ⌜_⌝ : PHOAS Var Γ A → Tm Γ A
 ⌜ `[ Δ ] i ⌝ = ` (vs* Δ i)
-⌜ ƛ t ⌝ = ƛ ⌜ t vz ⌝
-⌜ t · u ⌝ = ⌜ t ⌝ · ⌜ u ⌝
+⌜ ƛ t      ⌝ = ƛ ⌜ t vz ⌝
+⌜ t · u    ⌝ = ⌜ t ⌝ · ⌜ u ⌝
 
 module Example-ChurchNats where
   Cℕ : Ty → Ty

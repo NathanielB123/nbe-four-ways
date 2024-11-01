@@ -19,26 +19,23 @@ PreVal : Ctx → Ty → Set
 
 PreVal Γ ⊤'      = ⊤
 PreVal Γ ℕ'      = ℕPreVal Γ
--- To enable weakening 'Val's, we need to parameterise the '_⇒_' case over
--- a sequence of additional 'Var'iables which can be thrown onto the front
--- of the context
+-- To enable weakening 'Val's, we parameterise the '_⇒_' case over a renaming 
 -- The original lisp code avoids this complexity by using named variables
-PreVal Γ (A ⇒ B) = ∀ Δ → Val (Γ ++ Δ) A → Val (Γ ++ Δ) B
+PreVal Γ (A ⇒ B) = ∀ {Δ} (δ : Vars Δ Γ) → Val Δ A → Val Δ B
 
 Val Γ A = PreVal Γ A ⊎ Ne Γ A
 
 pattern val     t = inj₁ t
 pattern reflect t = inj₂ t
 
-wk*-val  : ∀ Δ → Val Γ A → Val (Γ ++ Δ) A
+_∋_[_]val : ∀ A → Val Γ A → Vars Δ Γ → Val Δ A
+A       ∋ reflect t  [ δ ]val = reflect (t [ δ ]ne)
+⊤'      ∋ val tt     [ δ ]val = val tt
+ℕ'      ∋ val ze     [ δ ]val = val ze
+ℕ'      ∋ val (su n) [ δ ]val = val (su (ℕ' ∋ n [ δ ]val))
+(A ⇒ B) ∋ val t      [ δ ]val = val λ σ u → t (δ ⨾ σ) u
 
-wk*-val             Δ (reflect t)  = reflect (wk*-ne Δ t)
-wk*-val {A = ⊤'}    Δ (val tt)     = val tt
-wk*-val {A = ℕ'}    Δ (val ze)     = val ze
-wk*-val {A = ℕ'}    Δ (val (su n)) = val (su (wk*-val Δ n))
-wk*-val {A = A ⇒ B} Δ (val t)      = val λ Θ u → t (Δ ++ Θ) u
-
-open import Env Val wk*-val (reflect (` vz))
+open import Env Val (_ ∋_[_]val) (reflect (` vz))
 
 -- We parameterise over 'reify' implementation here because there are actually
 -- two reasonable alternatives
@@ -51,7 +48,7 @@ module Eval (reify : ∀ {Γ A} → Val Γ A → Nf Γ A) where
   eval (ρ , t) vz      = t
   eval (ρ , t) (vs i)  = eval ρ i
   eval ρ (t · u)       = app-val (eval ρ t) (eval ρ u)
-  eval ρ (ƛ t)         = val (λ Δ u → eval (wk*-env Δ ρ , u) t)
+  eval ρ (ƛ t)         = val (λ δ u → eval ((ρ [ δ ]env) , u) t)
   eval ρ tt            = val tt
   eval ρ ze            = val ze
   eval ρ (su n)        = val (su (eval ρ n))
@@ -61,7 +58,7 @@ module Eval (reify : ∀ {Γ A} → Val Γ A → Nf Γ A) where
   ℕ-rec-val z s (val (su n)) = app-val s (ℕ-rec-val z s n)
   ℕ-rec-val z s (reflect t)  = reflect (ℕ-rec (reify z) (reify s) t)
 
-  app-val (val t)     u = t ε u
+  app-val (val t)     u = t id u
   app-val (reflect t) u = reflect (t · reify u)
 
 -- Simple 'reify'. Avoids blocking on the type of 'Ne'utrals and produces 
@@ -71,17 +68,17 @@ reify             (reflect t)  = ne t
 reify {A = ⊤'}    (val tt)     = tt
 reify {A = ℕ'}    (val ze)     = ze
 reify {A = ℕ'}    (val (su n)) = su (reify n)
-reify {A = A ⇒ B} (val t)      = ƛ reify (t (ε , A) (reflect (` vz)))
+reify {A = A ⇒ B} (val t)      = ƛ reify (t (id ⁺) (reflect (` vz)))
 
 -- 'reify' which implements 'η' reductions. Always blocks on the type.
 reify-η : Val Γ A → Nf Γ A
 reify-η {A = ℕ'}    (val ze)     = ze
 reify-η {A = ℕ'}    (val (su n)) = su (reify-η n)
-reify-η {A = A ⇒ B} (val t)      = ƛ reify-η (t (ε , A) (reflect (` vz)))
+reify-η {A = A ⇒ B} (val t)      = ƛ reify-η (t (id ⁺) (reflect (` vz)))
 -- η for '⊤'
 reify-η {A = ⊤'}    _            = tt
 -- η for '_⇒_'
-reify-η {A = A ⇒ B} (reflect t)  = ƛ ne (wk*-ne (ε , A) t · ne (` vz))
+reify-η {A = A ⇒ B} (reflect t)  = ƛ ne ((t [ id ⁺ ]ne) · ne (` vz))
 reify-η {A = ℕ'}    (reflect t)  = ne t
 
 open Eval reify   using    (eval)           public
@@ -127,3 +124,4 @@ module Example-Norm-η where
               ≡ ƛ ƛ ƛ ne (` vs (vs vz) · (ƛ ne (` vs (vs vz) 
                                        · ne (` vz))) · ne (` vz))
   test-apply2 = refl
+ 
